@@ -6,6 +6,8 @@ import random
 import copy
 import sys
 import os
+from multiprocessing import Pool, cpu_count
+from functools import partial
 
 # Add parent directory to path to import src modules
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
@@ -58,9 +60,11 @@ class Node:
 
 
 class MCTS:
-    def __init__(self, iterations: int = 2000) -> None:
+    def __init__(self, iterations: int = 20_000, use_parallel: bool = True, num_workers: int = None) -> None:
         self.root: Node | None = None
         self.iterations = iterations
+        self.use_parallel = use_parallel
+        self.num_workers = num_workers or max(1, cpu_count() - 1)  # Leave one core free
 
     def uct_value(self, node: Node, parent: Node, exploration_weight: float = SQRT_TWO) -> float:
         """Calculate the UCT (Upper Confidence Bound for Trees) value."""
@@ -257,19 +261,13 @@ class MCTS:
         """Run MCTS from the root node and return the best move."""
         self.root = root
         
-        for _ in range(self.iterations):
-            # Selection
-            leaf = self.select(self.root)
-            
-            # Expansion
-            if not leaf.is_terminal() and leaf.visits > 0:
-                leaf = self.expand(leaf)
-            
-            # Simulation
-            result = self.simulate(leaf)
-            
-            # Backpropagation
-            self.backpropagate(leaf, result)
+        if self.use_parallel and self.iterations >= 100:
+            # Use parallel processing for larger iteration counts
+            self._parallel_search()
+        else:
+            # Sequential search for small iteration counts
+            for _ in range(self.iterations):
+                self._single_iteration()
         
         # Return move with highest visit count (most robust)
         if not self.root.children:
@@ -282,6 +280,95 @@ class MCTS:
         )[0]
         
         return best_move
+    
+    def _single_iteration(self):
+        """Execute a single MCTS iteration."""
+        # Selection
+        leaf = self.select(self.root)
+        
+        # Expansion
+        if not leaf.is_terminal() and leaf.visits > 0:
+            leaf = self.expand(leaf)
+        
+        # Simulation
+        result = self.simulate(leaf)
+        
+        # Backpropagation
+        self.backpropagate(leaf, result)
+    
+    def _parallel_search(self):
+        """Run MCTS iterations in parallel across multiple cores."""
+        # Divide iterations among workers
+        iterations_per_worker = self.iterations // self.num_workers
+        
+        # Create worker args (node, iterations to run)
+        worker_args = [(iterations_per_worker,) for _ in range(self.num_workers)]
+        
+        # Handle remainder iterations
+        remainder = self.iterations % self.num_workers
+        if remainder > 0:
+            worker_args.append((remainder,))
+        
+        # Run parallel simulations
+        with Pool(processes=self.num_workers) as pool:
+            results = pool.map(partial(_worker_mcts, root=self.root), worker_args)
+        
+        # Aggregate results from all workers
+        for worker_children in results:
+            for move_tuple, (visits, reward) in worker_children.items():
+                if move_tuple not in self.root.children:
+                    # Create the child if it doesn't exist
+                    move = Move(move_tuple[0], move_tuple[1])
+                    child = Node(
+                        board=self.root.board,
+                        current_colour=Colour.opposite(self.root.current_colour),
+                        move=move,
+                        parent=self.root,
+                    )
+                    self.root.children[move_tuple] = child
+                
+                # Aggregate statistics
+                self.root.children[move_tuple].visits += visits
+                self.root.children[move_tuple].reward += reward
+
+
+def _worker_mcts(args, root: Node) -> dict:
+    """Worker function for parallel MCTS. Runs independent simulations and returns aggregated stats."""
+    iterations, = args
+    
+    # Create a local copy of the root for this worker
+    local_root = Node(
+        board=root.board,
+        current_colour=root.current_colour,
+        move=None,
+        parent=None,
+    )
+    
+    # Create local MCTS instance (sequential)
+    local_mcts = MCTS(iterations=iterations, use_parallel=False)
+    local_mcts.root = local_root
+    
+    # Run iterations
+    for _ in range(iterations):
+        # Selection
+        leaf = local_mcts.select(local_root)
+        
+        # Expansion
+        if not leaf.is_terminal() and leaf.visits > 0:
+            leaf = local_mcts.expand(leaf)
+        
+        # Simulation
+        result = local_mcts.simulate(leaf)
+        
+        # Backpropagation
+        local_mcts.backpropagate(leaf, result)
+    
+    # Collect statistics from this worker's tree
+    child_stats = {}
+    for move_tuple, child in local_root.children.items():
+        child_stats[move_tuple] = (child.visits, child.reward)
+    
+    return child_stats
 
 
 class MoveType(Enum):
@@ -366,7 +453,8 @@ def is_outcome(node: Node) -> int:
 
 
 if __name__ == "__main__":
-    mcts = MCTS(iterations=2000)
+    # Use parallel MCTS with more iterations since we have multiple cores
+    mcts = MCTS(iterations=2000, use_parallel=True)
     
     while True:
         try:

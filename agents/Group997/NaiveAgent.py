@@ -44,5 +44,16 @@ class NaiveAgent(AgentBase):
         if turn == 2:
             return Move(-1, -1)
         else:
-            x, y = choice(self._choices)
-            return Move(x, y)
+            # Get all empty positions from the board
+            empty_positions = []
+            for i in range(board.size):
+                for j in range(board.size):
+                    if board.tiles[i][j].colour is None:
+                        empty_positions.append((i, j))
+            
+            if empty_positions:
+                x, y = choice(empty_positions)
+                return Move(x, y)
+            else:
+                # Should never happen in a normal game
+                return Move(0, 0)

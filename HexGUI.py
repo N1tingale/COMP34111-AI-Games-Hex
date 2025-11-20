@@ -29,8 +29,9 @@ class HexBoardGUI:
             # Live game mode
             tk.Label(control_frame, text=f"Live Game: {p1_name} vs {p2_name}", 
                     font=("Arial", 14, "bold")).pack()
-            tk.Button(control_frame, text="Start Game", command=self.start_live_game, 
-                     bg="#4CAF50", fg="white", font=("Arial", 12, "bold")).pack(pady=5)
+            self.start_button = tk.Button(control_frame, text="Start Game", command=self.start_live_game, 
+                     bg="#4CAF50", fg="white", font=("Arial", 12, "bold"))
+            self.start_button.pack(pady=5)
             self.status_label = tk.Label(control_frame, text="Ready to start", 
                                         font=("Arial", 10))
             self.status_label.pack()
@@ -171,6 +172,9 @@ class HexBoardGUI:
         if self.game_process:
             return  # Game already running
         
+        # Disable the start button
+        self.start_button.config(state=tk.DISABLED, bg="#A5D6A7")
+        
         cmd = [
             "python", "Hex.py",
             "-p1", self.player1,
@@ -199,52 +203,126 @@ class HexBoardGUI:
         """Read game output and update the GUI."""
         board_lines = []
         capturing_board = False
+        last_board_type = None
+        game_end_reason = None
         
         while True:
             line = self.game_process.stderr.readline()
             if not line:
+                # Process reached end of output
                 break
             
             line = line.rstrip()
             
             # Check for board markers
-            if "Turn Ending Board:" in line or "Starting Board:" in line or "Final Board:" in line:
+            if "Turn Ending Board:" in line:
                 capturing_board = True
+                last_board_type = "turn_ending"
+                board_lines = []
+                continue
+            elif "Starting Board:" in line:
+                capturing_board = True
+                last_board_type = "starting"
+                board_lines = []
+                continue
+            elif "Final Board:" in line:
+                capturing_board = True
+                last_board_type = "final"
                 board_lines = []
                 continue
             
             # Check for turn/game status
-            if "Turn" in line and "player" in line:
+            if "Turn" in line and "player" in line and "Turn Ending Board" not in line:
                 match = re.search(r'Turn (\d+): player (\w+)', line)
                 if match:
                     turn_num = match.group(1)
                     player = match.group(2)
                     self.root.after(0, lambda t=turn_num, p=player: 
-                                  self.status_label.config(text=f"Turn {t}: {p}'s move"))
+                                  self.status_label.config(text=f"Turn {t}: {p}'s move", fg="black", font=("Arial", 10)))
             
             if "Game over" in line:
-                self.root.after(0, lambda: self.status_label.config(text="Game Over!"))
+                self.root.after(0, lambda: self.status_label.config(text="Game Over - reading final board...", fg="black", font=("Arial", 10)))
+            
+            # Check for winner announcement
+            if "has won" in line:
+                match = re.search(r'Player (\w+) has won', line)
+                if match:
+                    winner = match.group(1)
+                    game_end_reason = f"🏆 {winner} WINS! (Connected their sides)"
+                    self.root.after(0, lambda w=winner: 
+                                  self.status_label.config(text=f"Game Over! {w} wins!", fg="black", font=("Arial", 10)))
+            
+            if "has timed out" in line:
+                match = re.search(r'Player (\w+) has timed out', line)
+                if match:
+                    player = match.group(1)
+                    game_end_reason = f"⏱️ {player} TIMED OUT! (Exceeded time limit)"
+                    self.root.after(0, lambda p=player: 
+                                  self.status_label.config(text=f"Game Over! {p} timed out", fg="black", font=("Arial", 10)))
+            
+            # Check for illegal move
+            if "illegal move" in line.lower() or "invalid move" in line.lower():
+                match = re.search(r'Player (\w+)', line)
+                if match:
+                    player = match.group(1)
+                    game_end_reason = f"❌ {player} MADE AN ILLEGAL MOVE! (Game forfeited)"
+                else:
+                    game_end_reason = f"❌ ILLEGAL MOVE! (Game forfeited)"
+            
+            # Check for crash/error
+            if "crashed" in line.lower() or "error" in line.lower():
+                match = re.search(r'Player (\w+)', line)
+                if match:
+                    player = match.group(1)
+                    game_end_reason = f"💥 {player} CRASHED! (Game forfeited)"
             
             # Capture board lines
             if capturing_board:
-                # Check if line looks like a board row
-                if line and any(c in line for c in ['R', 'B', '0']):
-                    board_lines.append(line)
-                elif board_lines:
+                # Check if line looks like a board row (contains R, B, or 0 and spaces)
+                stripped = line.strip()
+                if stripped and any(c in stripped for c in ['R', 'B', '0']):
+                    # Additional check: must have spaces or be all single chars
+                    if ' ' in stripped or len(stripped.replace('0', '').replace('R', '').replace('B', '')) == 0:
+                        board_lines.append(line)
+                # Stop capturing when we hit an empty line or non-board line after collecting some rows
+                elif board_lines and len(board_lines) >= self.board_size:
                     # We've captured a complete board
                     capturing_board = False
                     board_text = '\n'.join(board_lines)
-                    self.root.after(0, lambda bt=board_text: self.update_board_from_text(bt))
+                    # Always update for final boards, only update turn endings for live view
+                    if last_board_type in ["turn_ending", "final"]:
+                        self.root.after(0, lambda bt=board_text, lt=last_board_type: 
+                                      self.update_board_from_text(bt, lt))
                     board_lines = []
+                    last_board_type = None
         
-        self.root.after(0, lambda: self.status_label.config(text="Game finished"))
+        # Make sure we process any remaining board
+        if board_lines:
+            board_text = '\n'.join(board_lines)
+            self.root.after(0, lambda bt=board_text, lt=last_board_type: 
+                          self.update_board_from_text(bt, lt))
+        
+        # Display final game result
+        if game_end_reason:
+            self.root.after(0, lambda r=game_end_reason: 
+                          self.status_label.config(text=r, fg="#2E7D32" if "WINS" in r else "#C62828", 
+                                                  font=("Arial", 12, "bold")))
+        else:
+            self.root.after(0, lambda: self.status_label.config(text="Game finished - showing final state"))
+        
+        # Re-enable the start button
+        self.root.after(0, lambda: self.start_button.config(state=tk.NORMAL, bg="#4CAF50"))
         self.game_process = None
     
-    def update_board_from_text(self, board_text):
+    def update_board_from_text(self, board_text, board_type=None):
         """Update the board display from captured text."""
         board = self.parse_board(board_text)
         if board:
             self.visualize_board_data(board)
+            # Add a small delay for better visibility in fast games
+            if board_type != "final":
+                import time
+                time.sleep(0.1)
     
     def visualize_board_data(self, board):
         """Draw the hex board from board data."""
