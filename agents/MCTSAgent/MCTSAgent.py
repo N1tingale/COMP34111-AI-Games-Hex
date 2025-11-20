@@ -11,7 +11,31 @@ class MCTSAgent(AgentBase):
         super().__init__(colour)
 
         self.agent_process = subprocess.Popen(
-            ["./agents/MCTSAgent/mcts-hex"],
+            ["python3", "agents/MCTSAgent/MCTS.py"],
+            stdout=subprocess.PIPE,
+            stdin=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+            bufsize=1
+        )
+
+    def __getstate__(self):
+        """
+        Prepare the object for pickling (and deepcopy). Exclude the non-pickleable
+        'agent_process' attribute.
+        """
+        state = self.__dict__.copy()
+        if 'agent_process' in state:
+            del state['agent_process']
+        return state
+
+    def __setstate__(self, state):
+        """
+        Restore the object after unpickling (and deepcopy). Re-create the 'agent_process'.
+        """
+        self.__dict__.update(state)
+        self.agent_process = subprocess.Popen(
+            ["python3", "agents/MCTSAgent/MCTS.py"],
             stdout=subprocess.PIPE,
             stdin=subprocess.PIPE,
             stderr=subprocess.PIPE,
@@ -51,7 +75,7 @@ class MCTSAgent(AgentBase):
 
         if opp_move is None:
             command = f"START;;{board_string};{turn};"
-        elif opp_move.x == -1 and opp_move.y == -1:
+        elif opp_move.is_swap():
             command = f"SWAP;;{board_string};{turn};"
         else:
             command = f"CHANGE;{opp_move.x},{opp_move.y};{board_string};{turn};"
