@@ -50,7 +50,7 @@ class Game:
 
     # the maximum time allocated for a match per player
     # 5 minutes in nanoseconds (min * s/min * ns/s)
-    MAXIMUM_TIME = 3 * 60 * 10**9
+    MAXIMUM_TIME = 5 * 60 * 10**9
     # 1 second in nanoseconds
     # MAXIMUM_TIME = 10**9
 
@@ -234,9 +234,9 @@ class Game:
                     f"Player {self.players[self.current_player].name} made an illegal move"
                 )
                 logger.info(
-                    f"Player {self.players[self.current_player.opposite()].name} has won"
+                    f"Player {self.players[Colour.opposite(self.current_player)].name} has won"
                 )
-                winner = self.players[self.current_player.opposite()].name
+                winner = self.players[Colour.opposite(self.current_player)].name
 
             case EndState.TIMEOUT:
                 # the player printed is the winner
@@ -245,9 +245,9 @@ class Game:
                     f"Player {self.players[self.current_player].name} has timed out"
                 )
                 logger.info(
-                    f"Player {self.players[self.current_player.opposite()].name} has won"
+                    f"Player {self.players[Colour.opposite(self.current_player)].name} has won"
                 )
-                winner = self.players[self.current_player.opposite()].name
+                winner = self.players[Colour.opposite(self.current_player)].name
             case _:
                 logger.error("Game ended abnormally")
                 raise Exception("Game ended abnormally")
