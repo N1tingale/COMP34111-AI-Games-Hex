@@ -95,19 +95,29 @@ def move_to_index(move):
 
 
 def board_to_tensor(board, current_player):
-    """Convert board to 3-channel tensor (matching trainA100.py encoding)"""
+    """
+    Convert board to 3-channel tensor matching mcts_hex.cpp encoding.
+    Plane 0: My stones
+    Plane 1: Opponent stones
+    Plane 2: Player Color (All 1.0 if Red/Vertical, All 0.0 if Blue/Horizontal)
+    """
     tensor = np.zeros((3, BOARD_SIZE, BOARD_SIZE), dtype=np.float32)
     
     for i in range(BOARD_SIZE):
         for j in range(BOARD_SIZE):
             tile_colour = board.tiles[i][j].colour
+            
             if tile_colour == current_player:
-                tensor[0, i, j] = 1.0  # Current player's pieces
+                tensor[0, i, j] = 1.0  # Plane 0: My stones
             elif tile_colour is not None:
-                tensor[1, i, j] = 1.0  # Opponent's pieces
-            else:
-                tensor[2, i, j] = 1.0  # Empty positions
+                tensor[1, i, j] = 1.0  # Plane 1: Opponent stones
                 
+    # Fix: Plane 2 is Player Color (Orientation), not Empty spots
+    if current_player == Colour.RED:
+        tensor[2, :, :] = 1.0
+    else:
+        tensor[2, :, :] = 0.0
+        
     return torch.FloatTensor(tensor).unsqueeze(0)
 
 
@@ -563,20 +573,38 @@ class MCTS:
         return new_board
 
     def _apply_move(self, board, move, colour):
-        """Apply move to board (swap handled by game engine)"""
-        # CRITICAL ISSUE: MCTS doesn't simulate swap at all!
-        # Swap does nothing to board state, but player alternates, creating inconsistent search tree
-        # TODO: Either handle swap properly in MCTS or remove swap from non-root decisions
-        if not move.is_swap():
+        """
+        Apply move to board.
+        If SWAP: Use Transpose logic to match Neural Network training (mcts_hex.cpp).
+        """
+        if move.is_swap():
+            # Logic matches mcts_hex.cpp:
+            # 1. Find the opponent's stone (there should be exactly one)
+            prev_move = None
+            found_stone = False
+            for r in range(board.size):
+                for c in range(board.size):
+                    if board.tiles[r][c].colour is not None:
+                        # Clear the old stone
+                        board.tiles[r][c].colour = None 
+                        prev_move = (r, c)
+                        found_stone = True
+                        break
+                if found_stone: break
+                
+            if found_stone:
+                # 2. Transpose coordinates (r, c) -> (c, r)
+                new_r, new_c = prev_move[1], prev_move[0]
+                
+                # 3. Place stone as YOUR colour (Current Player)
+                # This creates the board state the network learned to associate with a successful swap
+                board.set_tile_colour(new_r, new_c, colour)
+        else:
+            # Standard move
             board.set_tile_colour(move.x, move.y, colour)
     
     def _get_valid_actions(self, board):
         """Get all legal moves for current board state"""
-        # CRITICAL ISSUE: Swap legality is too loose!
-        # Currently allows swap whenever 1 stone on board, but should only be:
-        # - Turn 2 AND second player (BLUE) in standard Hex rules
-        # - This can cause illegal moves if framework checks turn number
-        # TODO: Pass turn/colour info and gate: allow_swap = (turn == 2 and colour == BLUE)
         valid_moves = []
         occupied_count = 0
         
@@ -587,7 +615,7 @@ class MCTS:
                 else:
                     occupied_count += 1
                     
-        # Swap available on turn 2 (exactly 1 stone on board)
+        # Swap is legal if there is exactly 1 stone on the board
         if occupied_count == 1:
             valid_moves.append(Move(-1, -1))
             
