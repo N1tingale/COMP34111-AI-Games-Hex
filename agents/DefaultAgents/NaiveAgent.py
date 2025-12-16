@@ -19,6 +19,29 @@ class NaiveAgent(AgentBase):
     _choices: list[Move]
     _board_size: int = 11
 
+    def _get_valid_actions(self, board):
+        """Get all legal moves for current board state"""
+        # CRITICAL ISSUE: Swap legality is too loose!
+        # Currently allows swap whenever 1 stone on board, but should only be:
+        # - Turn 2 AND second player (BLUE) in standard Hex rules
+        # - This can cause illegal moves if framework checks turn number
+        # TODO: Pass turn/colour info and gate: allow_swap = (turn == 2 and colour == BLUE)
+        valid_moves = []
+        occupied_count = 0
+        
+        for i in range(board.size):
+            for j in range(board.size):
+                if board.tiles[i][j].colour is None:
+                    valid_moves.append(Move(i, j))
+                else:
+                    occupied_count += 1
+                    
+        # Swap available on turn 2 (exactly 1 stone on board)
+        if occupied_count == 1:
+            valid_moves.append(Move(-1, -1))
+            
+        return valid_moves
+
     def __init__(self, colour: Colour):
         super().__init__(colour)
         self._choices = [
@@ -44,6 +67,8 @@ class NaiveAgent(AgentBase):
         # if turn == 2 and choice([0, 1]) == 1:
         if turn == 2:
             return Move(-1, -1)
-        else:
-            x, y = choice(self._choices)
-            return Move(x, y)
+        ##else:
+            #x, y = choice(self._choices)
+            #return Move(x, y)
+            ##return choice(self._get_valid_actions(board))
+        return choice(self._get_valid_actions(board))
