@@ -563,10 +563,12 @@ class TournamentAgent(AgentBase):
         # Robust path handling - look relative to this file
         agent_dir = Path(__file__).parent
         model_paths = [
-            agent_dir / "model_hpc_latest.pt",  # Use latest model for fair comparison
+            agent_dir / "model_hpc_latest_latest.pt",  # Use latest model for fair comparison
+            agent_dir / "model_hpc_latest.pt",
             agent_dir / "model_hpc.pt",
             agent_dir / "model.pt", 
-            Path("model_hpc_latest.pt"),  # Fallback to CWD
+            Path("model_hpc_latest_latest.pt"),  # Fallback to CWD
+            Path("model_hpc_latest.pt"),
             Path("model_hpc.pt"),
             Path("model.pt")
         ]
