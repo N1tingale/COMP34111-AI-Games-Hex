@@ -7,7 +7,7 @@ OPTIMIZATIONS:
 2. JIT TRACE - Graph compilation for low overhead.
 3. THREAD PINNING - Locked to 8 threads to match Docker limit & P-Cores.
 4. MCTS TUNING - Heavy exploration (cpuct=2.0) for low-simulation regime.
-5. BUG FIXES - Corrected Swap logic (Ghost Stone) & Swap legality check (Turn 3 bug).
+5. OPTIMISED TIME MGMT - Aggressive time allocation based on game phase.
 """
 
 import time
@@ -454,12 +454,13 @@ class TournamentAgent(AgentBase):
 
         agent_dir = Path(__file__).parent
         model_paths = [
-            agent_dir / "model_hpc_latest_latest.pt",
-            agent_dir / "model_hpc_latest.pt",
+            # agent_dir / "model_hpc_latest_latest.pt",
+            # agent_dir / "model_hpc_latest.pt",
             agent_dir / "model_hpc.pt",
-            agent_dir / "model.pt",
-            Path("model_hpc_latest.pt"),
-            Path("model.pt"),
+            # agent_dir / "model.pt",
+            # Path("model_hpc_latest.pt"),
+            Path("model_hpc.pt"),
+            # Path("model.pt"),
         ]
 
         loaded = False
@@ -519,14 +520,29 @@ class TournamentAgent(AgentBase):
         est_moves = max(1, empty // 2)
         base = rem_time / est_moves
 
-        if empty > 90:
-            mult = 0.4
+        if empty > 100:
+            # OPENING (Moves 1-10): Fast. 
+            # Tree is too wide for deep reading to help much.
+            mult = 0.5   
+        elif empty > 80:
+            # EARLY MID (Moves 10-20): Ramp up.
+            # Setting up the shapes.
+            mult = 1.0   
         elif empty > 40:
-            mult = 1.0
+            # THE CRUNCH (Moves 20-40): MAXIMUM POWER.
+            # This is where connections break or hold. Spend everything.
+            mult = 1.6   
+        elif empty > 20:
+            # LATE MID (Moves 40-50): Taper down.
+            # Most paths are settled.
+            mult = 1.0   
         else:
-            mult = 1.2
+            # ENDGAME (Moves 50+): Sprint.
+            # Search space is tiny. Don't waste time.
+            mult = 0.6   
 
-        limit = max(0.5, min(5.0, base * mult))
+        # Hard limits to ensure we never stall or play instantly
+        limit = max(0.4, min(7.0, base * mult))
 
         # 4. Search
         start = time.time()
