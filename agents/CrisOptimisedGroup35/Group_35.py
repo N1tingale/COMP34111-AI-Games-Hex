@@ -1,7 +1,8 @@
 """
 Tournament agent for Hex game using neural network + MCTS.
 
-HARDWARE TARGET: Intel(R) Xeon(R) Gold 5416S (Sapphire Rapids) & Core i9-12900K
+HARDWARE TARGET: Intel(R) Xeon(R) Gold 5416S (Sapphire Rapids)
+
 OPTIMIZATIONS:
 1. INT8 QUANTIZATION - Dynamic quantization for 2x inference speed.
 2. JIT TRACE - Graph compilation for low overhead.
@@ -12,8 +13,9 @@ OPTIMIZATIONS:
 
 import time
 import math
+from pathlib import Path
 import torch
-import torch.nn as nn
+from torch import nn
 import torch.nn.functional as F
 import numpy as np
 from src.AgentBase import AgentBase
@@ -78,6 +80,7 @@ class HexResNet(nn.Module):
         )
 
     def forward(self, x):
+        """Forward pass of the network."""
         out = self.conv_input(x)
         for block in self.res_blocks:
             residual = out
@@ -90,12 +93,14 @@ class HexResNet(nn.Module):
 
 
 def move_to_index(move):
+    """Converts a Move object to a flat index."""
     if move.is_swap():
         return BOARD_SIZE * BOARD_SIZE
     return move.x * BOARD_SIZE + move.y
 
 
 def board_to_numpy(board):
+    """Converts the Board object to a numpy grid."""
     grid = np.zeros((board.size, board.size), dtype=np.int8)
     for r in range(board.size):
         for c in range(board.size):
@@ -108,6 +113,7 @@ def board_to_numpy(board):
 
 
 def numpy_to_tensor(grid, current_player_int):
+    """Converts a numpy grid to a PyTorch tensor."""
     t = np.zeros((3, BOARD_SIZE, BOARD_SIZE), dtype=np.float32)
     t[0] = grid == current_player_int
     t[1] = grid == (BLUE_INT if current_player_int == RED_INT else RED_INT)
@@ -118,16 +124,20 @@ def numpy_to_tensor(grid, current_player_int):
 
 # --- IMMEDIATE WIN CHECK ---
 class UnionFind:
+    """Simple Union-Find data structure."""
+
     def __init__(self, size):
         self.parent = list(range(size))
         self.rank = [0] * size
 
     def find(self, x):
+        """Finds the representative of the set containing x."""
         if self.parent[x] != x:
             self.parent[x] = self.find(self.parent[x])
         return self.parent[x]
 
     def union(self, x, y):
+        """Unions the sets containing x and y."""
         px, py = self.find(x), self.find(y)
         if px == py:
             return
@@ -139,9 +149,14 @@ class UnionFind:
 
 
 def check_immediate_win(board, colour):
+    """
+    Checks if there are any immediate winning moves for the given colour.
+    Returns a list of winning moves.
+    """
+
     size = board.size
     uf = UnionFind(size * size + 4)
-    TOP, BOT, LEFT, RIGHT = (
+    node_top, node_bot, node_left, node_right = (
         size * size,
         size * size + 1,
         size * size + 2,
@@ -154,14 +169,14 @@ def check_immediate_win(board, colour):
                 pos = i * size + j
                 if colour == Colour.RED:
                     if i == 0:
-                        uf.union(pos, TOP)
+                        uf.union(pos, node_top)
                     if i == size - 1:
-                        uf.union(pos, BOT)
+                        uf.union(pos, node_bot)
                 else:
                     if j == 0:
-                        uf.union(pos, LEFT)
+                        uf.union(pos, node_left)
                     if j == size - 1:
-                        uf.union(pos, RIGHT)
+                        uf.union(pos, node_right)
                 for di, dj in [(0, 1), (1, 0), (0, -1), (-1, 0), (1, -1), (-1, 1)]:
                     ni, nj = i + di, j + dj
                     if (
@@ -177,10 +192,10 @@ def check_immediate_win(board, colour):
             if board.tiles[i][j].colour is None:
                 has_neighbor = False
                 if colour == Colour.RED:
-                    if i == 0 or i == size - 1:
+                    if i in (0, size - 1):
                         has_neighbor = True
                 else:
-                    if j == 0 or j == size - 1:
+                    if j in (0, size - 1):
                         has_neighbor = True
 
                 if not has_neighbor:
@@ -199,14 +214,14 @@ def check_immediate_win(board, colour):
                     connected_edges = set()
                     if colour == Colour.RED:
                         if i == 0:
-                            connected_edges.add(TOP)
+                            connected_edges.add(node_top)
                         if i == size - 1:
-                            connected_edges.add(BOT)
+                            connected_edges.add(node_bot)
                     else:
                         if j == 0:
-                            connected_edges.add(LEFT)
+                            connected_edges.add(node_left)
                         if j == size - 1:
-                            connected_edges.add(RIGHT)
+                            connected_edges.add(node_right)
 
                     for di, dj in [(0, 1), (1, 0), (0, -1), (-1, 0), (1, -1), (-1, 1)]:
                         ni, nj = i + di, j + dj
@@ -217,8 +232,8 @@ def check_immediate_win(board, colour):
                         ):
                             connected_edges.add(uf.find(ni * size + nj))
 
-                    target_start = TOP if colour == Colour.RED else LEFT
-                    target_end = BOT if colour == Colour.RED else RIGHT
+                    target_start = node_top if colour == Colour.RED else node_left
+                    target_end = node_bot if colour == Colour.RED else node_right
 
                     has_start = any(
                         uf.find(root) == uf.find(target_start)
@@ -234,10 +249,97 @@ def check_immediate_win(board, colour):
     return winning_moves
 
 
+def check_immediate_win_numpy(grid, player_int):
+    """
+    Checks if the given player has an immediate winning move on the numpy grid.
+    Returns True if a winning move exists, False otherwise.
+    """
+
+    size = grid.shape[0]
+    uf = UnionFind(size * size + 4)
+    node_top, node_bot, node_left, node_right = (
+        size * size,
+        size * size + 1,
+        size * size + 2,
+        size * size + 3,
+    )
+
+    # 1. Build connectivity for existing stones
+    for i in range(size):
+        for j in range(size):
+            if grid[i, j] == player_int:
+                pos = i * size + j
+                if player_int == RED_INT:
+                    if i == 0:
+                        uf.union(pos, node_top)
+                    if i == size - 1:
+                        uf.union(pos, node_bot)
+                else:  # BLUE
+                    if j == 0:
+                        uf.union(pos, node_left)
+                    if j == size - 1:
+                        uf.union(pos, node_right)
+
+                # Neighbors
+                for di, dj in [(0, 1), (1, 0), (0, -1), (-1, 0), (1, -1), (-1, 1)]:
+                    ni, nj = i + di, j + dj
+                    if 0 <= ni < size and 0 <= nj < size and grid[ni, nj] == player_int:
+                        uf.union(pos, ni * size + nj)
+
+    # 2. Check if any empty spot connects the sides
+    target_start = node_top if player_int == RED_INT else node_left
+    target_end = node_bot if player_int == RED_INT else node_right
+
+    start_root = uf.find(target_start)
+    end_root = uf.find(target_end)
+
+    for i in range(size):
+        for j in range(size):
+            if grid[i, j] == EMPTY:
+                connected_start = False
+                connected_end = False
+
+                # Optimization: Check if it's on the edge itself
+                if player_int == RED_INT:
+                    if i == 0:
+                        connected_start = True
+                    if i == size - 1:
+                        connected_end = True
+                else:
+                    if j == 0:
+                        connected_start = True
+                    if j == size - 1:
+                        connected_end = True
+
+                # Check neighbors if not already connected to edge
+                if not (connected_start and connected_end):
+                    for di, dj in [(0, 1), (1, 0), (0, -1), (-1, 0), (1, -1), (-1, 1)]:
+                        ni, nj = i + di, j + dj
+                        if (
+                            0 <= ni < size
+                            and 0 <= nj < size
+                            and grid[ni, nj] == player_int
+                        ):
+                            root = uf.find(ni * size + nj)
+                            if root == start_root:
+                                connected_start = True
+                            if root == end_root:
+                                connected_end = True
+                            if connected_start and connected_end:
+                                break
+
+                if connected_start and connected_end:
+                    return True
+
+    return False
+
+
 # --- MCTS CORE ---
 
 
 class MCTSNode:
+    """Node in the MCTS tree."""
+
     def __init__(self, parent=None, prior=0.0, move=None):
         self.parent = parent
         self.children = {}
@@ -248,21 +350,26 @@ class MCTSNode:
         self.is_expanded = False
 
     def value(self):
+        """Returns the mean value of the node."""
         if self.visit_count == 0:
             return 0.0
         return self.value_sum / self.visit_count
 
     def expand(self, action_priors):
+        """Expands the node with the given action priors."""
         for action, prob in action_priors:
             if action not in self.children:
                 self.children[action] = MCTSNode(self, prob, action)
         self.is_expanded = True
 
     def is_leaf(self):
+        """Returns True if the node is a leaf."""
         return not self.is_expanded
 
 
 class MCTS:
+    """Monte Carlo Tree Search implementation."""
+
     def __init__(self, model, cpuct=2.0):
         self.model = model
         self.cpuct = cpuct
@@ -272,6 +379,10 @@ class MCTS:
     def search(
         self, root_board, player_colour, time_limit, turn_number, last_move=None
     ):
+        """
+        Performs MCTS search.
+        """
+
         winning_moves = check_immediate_win(root_board, player_colour)
         if winning_moves:
             return winning_moves[0]
@@ -294,7 +405,7 @@ class MCTS:
         player_int = RED_INT if player_colour == Colour.RED else BLUE_INT
 
         if not self.root.is_expanded:
-            # FIX 1: Pass initial turn number to expand
+            # Pass initial turn number to expand
             self._expand_node(self.root, root_grid, player_int, turn_number)
 
         start_time = time.time()
@@ -310,7 +421,7 @@ class MCTS:
             search_grid = root_grid.copy()
             current_player_int = player_int
 
-            # FIX 2: Track turn depth in simulation to prevent illegal swaps deep in tree
+            # Track turn depth in simulation to prevent illegal swaps deep in tree
             sim_turn = turn_number
 
             while not node.is_leaf():
@@ -319,7 +430,14 @@ class MCTS:
                 current_player_int = 3 - current_player_int
                 sim_turn += 1
 
-            value = self._expand_node(node, search_grid, current_player_int, sim_turn)
+            # Check for immediate win at leaf
+            if check_immediate_win_numpy(search_grid, current_player_int):
+                value = 1.0
+            else:
+                value = self._expand_node(
+                    node, search_grid, current_player_int, sim_turn
+                )
+
             self._backpropagate(node, value)
             simulations += 1
 
@@ -369,10 +487,7 @@ class MCTS:
         valid_indices = np.argwhere(grid == EMPTY)
         valid_moves = [Move(r, c) for r, c in valid_indices]
 
-        # FIX 3: STRICT SWAP VALIDITY CHECK
-        # Swap is ONLY valid on Turn 2.
-        # Even if board has 1 stone, we must ensure it is actually Turn 2.
-        # This prevents "Double Swap" logic (Turn 3 after swap).
+        # Strict swap validity check
         if np.count_nonzero(grid) == 1 and turn_number == 2:
             valid_moves.append(Move(-1, -1))
 
@@ -441,6 +556,10 @@ class MCTS:
 
 
 class TournamentAgent(AgentBase):
+    """
+    Tournament agent for Hex game using neural network + MCTS.
+    """
+
     def __init__(self, colour: Colour):
         super().__init__(colour)
         self.model = HexResNet()
@@ -450,17 +569,11 @@ class TournamentAgent(AgentBase):
         self.mcts = MCTS(self.model)
 
     def load_model(self):
-        from pathlib import Path
-
+        """Loads the best available model from disk."""
         agent_dir = Path(__file__).parent
         model_paths = [
-            # agent_dir / "model_hpc_latest_latest.pt",
-            # agent_dir / "model_hpc_latest.pt",
             agent_dir / "model_hpc.pt",
-            # agent_dir / "model.pt",
-            # Path("model_hpc_latest.pt"),
             Path("model_hpc.pt"),
-            # Path("model.pt"),
         ]
 
         loaded = False
@@ -477,7 +590,7 @@ class TournamentAgent(AgentBase):
                     print(f"Loaded {path}")
                     loaded = True
                     break
-                except:
+                except Exception:
                     pass
 
         if not loaded:
@@ -497,16 +610,19 @@ class TournamentAgent(AgentBase):
             print(f"JIT failed: {e}")
 
     def make_move(self, turn: int, board: Board, opp_move: Move | None) -> Move:
+        """
+        Selects the best move using MCTS.
+        """
         # 1. Game Start Reset
         if turn in (1, 2):
             self.time_used = 0.0
             self.mcts.root = None
             self.mcts.transposition_table = {}
 
-        # 2. CRITICAL FIX: NUKE TREE ON OPPONENT SWAP
+        # 2. Clear tree on opponent swap
         # If the opponent swapped, the "Simulated World" (which used transposition)
         # no longer matches the "Real World" (which swapped roles).
-        # We MUST clear the tree to prevent "Ghost Stone" illegal moves.
+        # We clear the tree to prevent "Ghost Stone" illegal moves.
         if opp_move is not None and opp_move.is_swap():
             self.mcts.root = None
             self.mcts.transposition_table = {}
@@ -515,50 +631,48 @@ class TournamentAgent(AgentBase):
         empty = sum(
             1 for r in range(11) for c in range(11) if board.tiles[r][c].colour is None
         )
+
         # 5.0s safety buffer
         rem_time = max(1.0, self.time_budget - self.time_used - 5.0)
         est_moves = max(1, empty // 2)
         base = rem_time / est_moves
 
         if empty > 100:
-            # OPENING (Moves 1-10): Fast. 
-            # Tree is too wide for deep reading to help much.
-            mult = 0.5   
+            # OPENING (Moves 1-10): Fast.
+            mult = 0.5
         elif empty > 80:
             # EARLY MID (Moves 10-20): Ramp up.
-            # Setting up the shapes.
-            mult = 1.0   
+            mult = 1.0
         elif empty > 40:
             # THE CRUNCH (Moves 20-40): MAXIMUM POWER.
-            # This is where connections break or hold. Spend everything.
-            mult = 1.6   
+            mult = 1.6
         elif empty > 20:
             # LATE MID (Moves 40-50): Taper down.
-            # Most paths are settled.
-            mult = 1.0   
+            mult = 1.0
         else:
             # ENDGAME (Moves 50+): Sprint.
-            # Search space is tiny. Don't waste time.
-            mult = 0.6   
+            mult = 0.6
 
         # Hard limits to ensure we never stall or play instantly
         limit = max(0.4, min(7.0, base * mult))
 
         # 4. Search
         start = time.time()
-        # FIX 4: Pass the turn number to search so it knows when Swap is legal
+
+        # Pass the turn number to search so it knows when Swap is legal
         best = self.mcts.search(board, self.colour, limit, turn, opp_move)
         elapsed = time.time() - start
 
         self.time_used += elapsed
-        time_left = self.time_budget - self.time_used
+        # time_left = self.time_budget - self.time_used
 
         if self.mcts.root:
-            speed = self.mcts.root.visit_count / elapsed if elapsed > 0 else 0
-            print(
-                f"Move {turn} | Time Left: {time_left:.1f}s | "
-                f"Sims: {self.mcts.root.visit_count} | Speed: {speed:.1f} sims/s"
-            )
+            # speed = self.mcts.root.visit_count / elapsed if elapsed > 0 else 0
+            # print(
+            #     f"Move {turn} | Time Left: {time_left:.1f}s | "
+            #     f"Sims: {self.mcts.root.visit_count} | Speed: {speed:.1f} sims/s"
+            # )
+            pass
 
         # 5. Fallback
         if best is None:
