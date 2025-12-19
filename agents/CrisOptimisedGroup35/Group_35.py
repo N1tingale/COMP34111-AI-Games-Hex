@@ -587,11 +587,10 @@ class TournamentAgent(AgentBase):
                         new_state[k] = v
                     self.model.load_state_dict(new_state, strict=True)
                     self.model.eval()
-                    print(f"Loaded {path}")
                     loaded = True
                     break
                 except Exception:
-                    pass
+                    print(f"Failed to load model from {path}")
 
         if not loaded:
             print("WARNING: Using random weights")
