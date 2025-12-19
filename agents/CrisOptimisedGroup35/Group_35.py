@@ -633,7 +633,7 @@ class TournamentAgent(AgentBase):
         )
 
         # 5.0s safety buffer
-        rem_time = max(1.0, self.time_budget - self.time_used - 5.0)
+        rem_time = max(1.0, self.time_budget - self.time_used)
         est_moves = max(1, empty // 2)
         base = rem_time / est_moves
 
