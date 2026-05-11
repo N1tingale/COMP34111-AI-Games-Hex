@@ -1,0 +1,29 @@
+Setting up environment...
+Setting up fast storage in /tmp/slurm.9379453...
+Copying files to /tmp/slurm.9379453/hex_job_9379453...
+Found existing model, copying...
+Starting training on node848.csf3.man.alces.network
+2025-12-04 11:30:44,214 - INFO - Training on: cuda
+2025-12-04 11:30:44,235 - INFO - Using 2 GPUs!
+2025-12-04 11:30:44,235 - INFO - Enabled TF32 precision for A100
+2025-12-04 11:30:45,662 - INFO - Loading existing model...
+2025-12-04 11:30:45,714 - INFO - === Iteration 1/100 ===
+2025-12-04 11:30:45,714 - INFO - Memory Usage: VmRSS:	  589272 kB
+2025-12-04 11:30:45,731 - INFO - Starting self-play with 16384 parallel games...
+Collected 24/983040 examples... (Speed: 0.0 ex/s)Collected 50/983040 examples... (Speed: 0.1 ex/s)Collected 77/983040 examples... (Speed: 0.1 ex/s)Collected 135/983040 examples... (Speed: 0.2 ex/s)Collected 315/983040 examples... (Speed: 0.5 ex/s)Collected 408/983040 examples... (Speed: 0.6 ex/s)Collected 728/983040 examples... (Speed: 1.0 ex/s)Collected 992/983040 examples... (Speed: 1.4 ex/s)Collected 1876/983040 examples... (Speed: 2.5 ex/s)Collected 2471/983040 examples... (Speed: 3.2 ex/s)Collected 3551/983040 examples... (Speed: 4.5 ex/s)Collected 4254/983040 examples... (Speed: 5.2 ex/s)Collected 6800/983040 examples... (Speed: 8.1 ex/s)Collected 8204/983040 examples... (Speed: 9.5 ex/s)Collected 10804/983040 examples... (Speed: 12.2 ex/s)Collected 12936/983040 examples... (Speed: 14.3 ex/s)Collected 16968/983040 examples... (Speed: 18.3 ex/s)Collected 20322/983040 examples... (Speed: 21.4 ex/s)Collected 26834/983040 examples... (Speed: 27.6 ex/s)Collected 32009/983040 examples... (Speed: 32.2 ex/s)Collected 40151/983040 examples... (Speed: 39.6 ex/s)Collected 48047/983040 examples... (Speed: 46.4 ex/s)Collected 58079/983040 examples... (Speed: 54.9 ex/s)Collected 68075/983040 examples... (Speed: 63.1 ex/s)Collected 81625/983040 examples... (Speed: 74.2 ex/s)Collected 92794/983040 examples... (Speed: 82.7 ex/s)Collected 110162/983040 examples... (Speed: 96.3 ex/s)Collected 126698/983040 examples... (Speed: 108.8 ex/s)Collected 145544/983040 examples... (Speed: 122.7 ex/s)Collected 163199/983040 examples... (Speed: 135.2 ex/s)Collected 187503/983040 examples... (Speed: 152.7 ex/s)Collected 210075/983040 examples... (Speed: 168.2 ex/s)Collected 235247/983040 examples... (Speed: 185.3 ex/s)Collected 262210/983040 examples... (Speed: 203.1 ex/s)Collected 292450/983040 examples... (Speed: 222.9 ex/s)Collected 325146/983040 examples... (Speed: 243.9 ex/s)Collected 357076/983040 examples... (Speed: 263.7 ex/s)Collected 388450/983040 examples... (Speed: 282.5 ex/s)Collected 422050/983040 examples... (Speed: 302.3 ex/s)Collected 458580/983040 examples... (Speed: 323.5 ex/s)Collected 491316/983040 examples... (Speed: 341.4 ex/s)Collected 526424/983040 examples... (Speed: 360.4 ex/s)Collected 564096/983040 examples... (Speed: 380.6 ex/s)Collected 601563/983040 examples... (Speed: 400.2 ex/s)Collected 631217/983040 examples... (Speed: 414.1 ex/s)Collected 663593/983040 examples... (Speed: 429.3 ex/s)Collected 696681/983040 examples... (Speed: 444.3 ex/s)Collected 730042/983040 examples... (Speed: 459.3 ex/s)Collected 760530/983040 examples... (Speed: 472.0 ex/s)Collected 788280/983040 examples... (Speed: 482.9 ex/s)Collected 815407/983040 examples... (Speed: 492.7 ex/s)Collected 843892/983040 examples... (Speed: 503.1 ex/s)Collected 867285/983040 examples... (Speed: 510.3 ex/s)Collected 893296/983040 examples... (Speed: 519.2 ex/s)Collected 915128/983040 examples... (Speed: 525.3 ex/s)Collected 934891/983040 examples... (Speed: 530.1 ex/s)Collected 951641/983040 examples... (Speed: 533.1 ex/s)Collected 969889/983040 examples... (Speed: 536.9 ex/s)2025-12-04 12:01:13,357 - INFO - Finished. Total examples: 984537
+2025-12-04 12:02:19,146 - INFO -   Epoch 1/10 Loss: 4.2177 (Val: 0.7631, Pol: 3.4546)
+2025-12-04 12:02:49,251 - INFO -   Epoch 2/10 Loss: 3.8238 (Val: 0.4428, Pol: 3.3810)
+2025-12-04 12:03:19,359 - INFO -   Epoch 3/10 Loss: 3.6684 (Val: 0.2952, Pol: 3.3732)
+2025-12-04 12:03:49,450 - INFO -   Epoch 4/10 Loss: 3.5953 (Val: 0.2349, Pol: 3.3604)
+2025-12-04 12:04:19,708 - INFO -   Epoch 5/10 Loss: 3.5561 (Val: 0.2065, Pol: 3.3496)
+2025-12-04 12:04:49,801 - INFO -   Epoch 6/10 Loss: 3.5285 (Val: 0.1863, Pol: 3.3421)
+2025-12-04 12:05:19,696 - INFO -   Epoch 7/10 Loss: 3.5112 (Val: 0.1773, Pol: 3.3339)
+2025-12-04 12:05:49,966 - INFO -   Epoch 8/10 Loss: 3.4978 (Val: 0.1712, Pol: 3.3267)
+2025-12-04 12:06:19,905 - INFO -   Epoch 9/10 Loss: 3.4867 (Val: 0.1659, Pol: 3.3209)
+2025-12-04 12:06:50,030 - INFO -   Epoch 10/10 Loss: 3.4748 (Val: 0.1612, Pol: 3.3136)
+2025-12-04 12:06:50,245 - INFO - Saved model_hpc.pt
+2025-12-04 12:06:50,301 - INFO - Synced model to /net/scratch/p12289lp/ai_and_games_project/model_hpc.pt
+2025-12-04 12:06:50,301 - INFO - === Iteration 2/100 ===
+2025-12-04 12:06:50,301 - INFO - Memory Usage: VmRSS:	16867032 kB
+2025-12-04 12:06:52,447 - INFO - Starting self-play with 16384 parallel games...
+Collected 23/983040 examples... (Speed: 0.0 ex/s)Collected 47/983040 examples... (Speed: 0.1 ex/s)Collected 125/983040 examples... (Speed: 0.2 ex/s)

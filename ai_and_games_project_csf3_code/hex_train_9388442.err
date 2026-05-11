@@ -1,0 +1,5 @@
+/mnt/iusers01/fse-ugpgt01/compsci01/p12289lp/.conda/envs/nlp_cw2_env/lib/python3.11/site-packages/torch/optim/lr_scheduler.py:62: UserWarning: The verbose parameter is deprecated. Please use get_last_lr() to access the learning rate.
+  warnings.warn(
+/mnt/iusers01/fse-ugpgt01/compsci01/p12289lp/.conda/envs/nlp_cw2_env/lib/python3.11/site-packages/torch/optim/lr_scheduler.py:62: UserWarning: The verbose parameter is deprecated. Please use get_last_lr() to access the learning rate.
+  warnings.warn(
+[2025-12-05T10:18:56.781] error: *** JOB 9388442 ON node854 CANCELLED AT 2025-12-05T10:18:56 DUE to SIGNAL Terminated ***

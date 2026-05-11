@@ -1,0 +1,52 @@
+Traceback (most recent call last):
+  File "/tmp/slurm.9380715/hex_job_9380715/trainA100.py", line 358, in <module>
+    main()
+  File "/tmp/slurm.9380715/hex_job_9380715/trainA100.py", line 337, in main
+    boards, probs, vals = generate_examples(model, num_games=GAMES_PER_ITERATION)
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/slurm.9380715/hex_job_9380715/trainA100.py", line 190, in generate_examples
+    pis, vs = inference_model(input_tensor)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/iusers01/fse-ugpgt01/compsci01/p12289lp/.conda/envs/nlp_cw2_env/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1739, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/iusers01/fse-ugpgt01/compsci01/p12289lp/.conda/envs/nlp_cw2_env/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1750, in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/iusers01/fse-ugpgt01/compsci01/p12289lp/.conda/envs/nlp_cw2_env/lib/python3.11/site-packages/torch/nn/parallel/data_parallel.py", line 193, in forward
+    outputs = self.parallel_apply(replicas, inputs, module_kwargs)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/iusers01/fse-ugpgt01/compsci01/p12289lp/.conda/envs/nlp_cw2_env/lib/python3.11/site-packages/torch/nn/parallel/data_parallel.py", line 212, in parallel_apply
+    return parallel_apply(
+           ^^^^^^^^^^^^^^^
+  File "/mnt/iusers01/fse-ugpgt01/compsci01/p12289lp/.conda/envs/nlp_cw2_env/lib/python3.11/site-packages/torch/nn/parallel/parallel_apply.py", line 126, in parallel_apply
+    output.reraise()
+  File "/mnt/iusers01/fse-ugpgt01/compsci01/p12289lp/.conda/envs/nlp_cw2_env/lib/python3.11/site-packages/torch/_utils.py", line 733, in reraise
+    raise exception
+AttributeError: Caught AttributeError in replica 0 on device 0.
+Original Traceback (most recent call last):
+  File "/mnt/iusers01/fse-ugpgt01/compsci01/p12289lp/.conda/envs/nlp_cw2_env/lib/python3.11/site-packages/torch/nn/parallel/parallel_apply.py", line 96, in _worker
+    output = module(*input, **kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/iusers01/fse-ugpgt01/compsci01/p12289lp/.conda/envs/nlp_cw2_env/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1739, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/iusers01/fse-ugpgt01/compsci01/p12289lp/.conda/envs/nlp_cw2_env/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1750, in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/iusers01/fse-ugpgt01/compsci01/p12289lp/.conda/envs/nlp_cw2_env/lib/python3.11/site-packages/torch/_dynamo/eval_frame.py", line 574, in _fn
+    return fn(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^
+  File "/mnt/iusers01/fse-ugpgt01/compsci01/p12289lp/.conda/envs/nlp_cw2_env/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1739, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/iusers01/fse-ugpgt01/compsci01/p12289lp/.conda/envs/nlp_cw2_env/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1750, in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/slurm.9380715/hex_job_9380715/trainA100.py", line 126, in forward
+    out = self.conv_input(x)
+          ^^^^^^^^^^^^^^^
+  File "/mnt/iusers01/fse-ugpgt01/compsci01/p12289lp/.conda/envs/nlp_cw2_env/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1928, in __getattr__
+    raise AttributeError(
+AttributeError: 'HexResNet' object has no attribute 'conv_input'
+

@@ -1,5 +1,14 @@
 agents/*_copy/
 .bash_history
+
+# Local submission / archive copies
+agents/Group035.tar
+agents/Group035/
+agents/Group35_old/
+ai-games-hex-hpc-code/
+ai_and_games_project_csf3_code/aig.zip
+ai_and_games_project_csf3_code/model_hpc copy.pt
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

@@ -1,0 +1,30 @@
+Setting up environment...
+Setting up fast storage in /tmp/slurm.9364287...
+Copying files to /tmp/slurm.9364287/hex_job_9364287...
+Found existing model, copying...
+Starting training on node858.csf3.man.alces.network
+Training on: cuda
+Using 2 GPUs!
+Loading existing model...
+
+=== Iteration 1/100 ===
+Memory Usage: VmRSS:	  577816 kB
+Starting self-play with 65536 parallel games...
+Collected 38/3932160 examples... (Speed: 0.0 ex/s)Collected 81/3932160 examples... (Speed: 0.0 ex/s)Collected 125/3932160 examples... (Speed: 0.1 ex/s)Collected 215/3932160 examples... (Speed: 0.1 ex/s)Collected 353/3932160 examples... (Speed: 0.1 ex/s)Collected 400/3932160 examples... (Speed: 0.2 ex/s)Collected 736/3932160 examples... (Speed: 0.3 ex/s)Collected 1030/3932160 examples... (Speed: 0.4 ex/s)Collected 1380/3932160 examples... (Speed: 0.5 ex/s)Collected 1890/3932160 examples... (Speed: 0.7 ex/s)Collected 2774/3932160 examples... (Speed: 1.0 ex/s)Collected 3834/3932160 examples... (Speed: 1.4 ex/s)Collected 5994/3932160 examples... (Speed: 2.1 ex/s)Collected 8084/3932160 examples... (Speed: 2.8 ex/s)Collected 10548/3932160 examples... (Speed: 3.6 ex/s)Collected 14595/3932160 examples... (Speed: 4.9 ex/s)Collected 20917/3932160 examples... (Speed: 6.9 ex/s)Collected 28469/3932160 examples... (Speed: 9.2 ex/s)Collected 38729/3932160 examples... (Speed: 12.3 ex/s)Collected 50990/3932160 examples... (Speed: 16.0 ex/s)Collected 67916/3932160 examples... (Speed: 21.0 ex/s)Collected 86438/3932160 examples... (Speed: 26.3 ex/s)Collected 113638/3932160 examples... (Speed: 34.0 ex/s)Collected 143798/3932160 examples... (Speed: 42.4 ex/s)Collected 184784/3932160 examples... (Speed: 53.6 ex/s)Collected 228334/3932160 examples... (Speed: 65.3 ex/s)Collected 283754/3932160 examples... (Speed: 80.0 ex/s)Collected 344336/3932160 examples... (Speed: 95.8 ex/s)Collected 417486/3932160 examples... (Speed: 114.6 ex/s)Collected 502473/3932160 examples... (Speed: 136.1 ex/s)Collected 593697/3932160 examples... (Speed: 158.7 ex/s)Collected 706190/3932160 examples... (Speed: 186.4 ex/s)Collected 814526/3932160 examples... (Speed: 212.3 ex/s)Collected 953876/3932160 examples... (Speed: 245.6 ex/s)Collected 1075020/3932160 examples... (Speed: 273.4 ex/s)Collected 1246037/3932160 examples... (Speed: 313.1 ex/s)Collected 1384097/3932160 examples... (Speed: 343.8 ex/s)Collected 1560504/3932160 examples... (Speed: 383.2 ex/s)Collected 1704984/3932160 examples... (Speed: 413.9 ex/s)Collected 1904325/3932160 examples... (Speed: 457.1 ex/s)Collected 2050695/3932160 examples... (Speed: 486.8 ex/s)Collected 2265831/3932160 examples... (Speed: 532.0 ex/s)Collected 2400903/3932160 examples... (Speed: 557.6 ex/s)Collected 2618928/3932160 examples... (Speed: 601.7 ex/s)Collected 2761172/3932160 examples... (Speed: 627.5 ex/s)Collected 2975105/3932160 examples... (Speed: 669.0 ex/s)Collected 3118985/3932160 examples... (Speed: 693.8 ex/s)Collected 3318523/3932160 examples... (Speed: 730.5 ex/s)Collected 3456673/3932160 examples... (Speed: 752.9 ex/s)Collected 3646681/3932160 examples... (Speed: 786.0 ex/s)Collected 3785049/3932160 examples... (Speed: 807.4 ex/s)
+Finished. Total examples: 3964167
+  Epoch 1/10 Loss: 3.5445 (Val: 1.0195, Pol: 2.5250)
+  Epoch 2/10 Loss: 3.1058 (Val: 0.6196, Pol: 2.4862)
+  Epoch 3/10 Loss: 2.8528 (Val: 0.3616, Pol: 2.4913)
+  Epoch 4/10 Loss: 2.7686 (Val: 0.2776, Pol: 2.4910)
+  Epoch 5/10 Loss: 2.7310 (Val: 0.2408, Pol: 2.4902)
+  Epoch 6/10 Loss: 2.7107 (Val: 0.2210, Pol: 2.4897)
+  Epoch 7/10 Loss: 2.6982 (Val: 0.2092, Pol: 2.4891)
+  Epoch 8/10 Loss: 2.6889 (Val: 0.1998, Pol: 2.4891)
+  Epoch 9/10 Loss: 2.6812 (Val: 0.1926, Pol: 2.4885)
+  Epoch 10/10 Loss: 2.6767 (Val: 0.1882, Pol: 2.4885)
+Saved model_hpc.pt
+Synced model to /net/scratch/p12289lp/ai_and_games_project/model_hpc.pt
+
+=== Iteration 2/100 ===
+Memory Usage: VmRSS:	64859224 kB
+Starting self-play with 65536 parallel games...
